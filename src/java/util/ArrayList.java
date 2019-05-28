@@ -221,7 +221,10 @@ public class ArrayList<E> extends AbstractList<E>
     }
 
     private static int calculateCapacity(Object[] elementData, int minCapacity) {
+        // 如果数组为空
         if (elementData == DEFAULTCAPACITY_EMPTY_ELEMENTDATA) {
+//          minCapacity=现有数组大小加上要添加元素个数
+//          比较默认的容量与最小容量大小
             return Math.max(DEFAULT_CAPACITY, minCapacity);
         }
         return minCapacity;
@@ -256,6 +259,7 @@ public class ArrayList<E> extends AbstractList<E>
     private void grow(int minCapacity) {
         // overflow-conscious code
         int oldCapacity = elementData.length;
+//      oldCapacity >> 1 == oldCapacity / 2
         int newCapacity = oldCapacity + (oldCapacity >> 1);
         if (newCapacity - minCapacity < 0)
             newCapacity = minCapacity;

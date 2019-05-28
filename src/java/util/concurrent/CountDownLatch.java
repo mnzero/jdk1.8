@@ -177,9 +177,12 @@ public class CountDownLatch {
             // Decrement count; signal when transition to zero
             for (;;) {
                 int c = getState();
+                //countDown的计数器递减到0，体现在我们程序中的，就是并行的几个任务已经执行完
                 if (c == 0)
                     return false;
+                // 每执行一次countDown,计数器减1
                 int nextc = c-1;
+                // 利用cas来更新state的状态，这里可能有并发。所以也是用死循环的方式更新
                 if (compareAndSetState(c, nextc))
                     return nextc == 0;
             }
