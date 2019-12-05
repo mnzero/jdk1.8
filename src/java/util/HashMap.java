@@ -336,6 +336,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
      */
     static final int hash(Object key) {
         int h;
+        //右移16。自己的高区和低区做异或，为了混合原始哈希码的高位和地位，以此增大低位的随机性
         return (key == null) ? 0 : (h = key.hashCode()) ^ (h >>> 16);
     }
 
@@ -627,6 +628,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
         Node<K,V>[] tab; Node<K,V> p; int n, i;
         if ((tab = table) == null || (n = tab.length) == 0)
             n = (tab = resize()).length;
+        //计算下标数组长度减一与hash值，数组长度减一相当于低位掩码。与操作的结果就是散列值的高位全部归零，只保留低位值，用来做数组下标访问
         if ((p = tab[i = (n - 1) & hash]) == null)
             tab[i] = newNode(hash, key, value, null);
         else {
@@ -637,6 +639,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
             else if (p instanceof TreeNode)
                 e = ((TreeNode<K,V>)p).putTreeVal(this, tab, hash, key, value);
             else {
+                // 尾插法
                 for (int binCount = 0; ; ++binCount) {
                     if ((e = p.next) == null) {
                         p.next = newNode(hash, key, value, null);
@@ -679,16 +682,22 @@ public class HashMap<K,V> extends AbstractMap<K,V>
         int oldCap = (oldTab == null) ? 0 : oldTab.length;
         int oldThr = threshold;
         int newCap, newThr = 0;
+        // 原数组大小大于零
         if (oldCap > 0) {
+            //原数组大小大于等于2的三十次方
             if (oldCap >= MAXIMUM_CAPACITY) {
                 threshold = Integer.MAX_VALUE;
                 return oldTab;
             }
+            // 原数组的两倍 小于 2的三十次方 而且 原数组大于等于16
             else if ((newCap = oldCap << 1) < MAXIMUM_CAPACITY &&
                      oldCap >= DEFAULT_INITIAL_CAPACITY)
+                // 新阈值是老阈值的两倍
                 newThr = oldThr << 1; // double threshold
         }
+        // 阈值大于零
         else if (oldThr > 0) // initial capacity was placed in threshold
+            //新容量=老的阈值
             newCap = oldThr;
         else {               // zero initial threshold signifies using defaults
             newCap = DEFAULT_INITIAL_CAPACITY;
@@ -713,11 +722,13 @@ public class HashMap<K,V> extends AbstractMap<K,V>
                     else if (e instanceof TreeNode)
                         ((TreeNode<K,V>)e).split(this, newTab, j, oldCap);
                     else { // preserve order
+                        // 拆分链表，将链表分为lo链表、hi链表
                         Node<K,V> loHead = null, loTail = null;
                         Node<K,V> hiHead = null, hiTail = null;
                         Node<K,V> next;
                         do {
                             next = e.next;
+                            // 以(e.hash & oldCap) == 0区lo链表还是hi链表
                             if ((e.hash & oldCap) == 0) {
                                 if (loTail == null)
                                     loHead = e;
@@ -733,10 +744,12 @@ public class HashMap<K,V> extends AbstractMap<K,V>
                                 hiTail = e;
                             }
                         } while ((e = next) != null);
+                        //如果lo链表非空，插入到数组j的位置
                         if (loTail != null) {
                             loTail.next = null;
                             newTab[j] = loHead;
                         }
+                        //如果hi链表非空，插入到数据j+oldCap的位置
                         if (hiTail != null) {
                             hiTail.next = null;
                             newTab[j + oldCap] = hiHead;
@@ -2130,7 +2143,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
          * @param index the index of the table being split
          * @param bit the bit of hash to split on
          */
-        final void split(HashMap<K,V> map, Node<K,V>[] tab, int index, int bit) {
+        final void  split(HashMap<K,V> map, Node<K,V>[] tab, int index, int bit) {
             TreeNode<K,V> b = this;
             // Relink into lo and hi lists, preserving order
             TreeNode<K,V> loHead = null, loTail = null;
@@ -2139,6 +2152,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
             for (TreeNode<K,V> e = b, next; e != null; e = next) {
                 next = (TreeNode<K,V>)e.next;
                 e.next = null;
+                //以(e.hash & bit) == 0区分lo树还是hi树
                 if ((e.hash & bit) == 0) {
                     if ((e.prev = loTail) == null)
                         loHead = e;
@@ -2156,7 +2170,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
                     ++hc;
                 }
             }
-
+            //如果lo树非空，将其放入原数组下边位置
             if (loHead != null) {
                 if (lc <= UNTREEIFY_THRESHOLD)
                     tab[index] = loHead.untreeify(map);
@@ -2166,6 +2180,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
                         loHead.treeify(tab);
                 }
             }
+            //如果hi树非空，将其放入index + bit位置
             if (hiHead != null) {
                 if (hc <= UNTREEIFY_THRESHOLD)
                     tab[index + bit] = hiHead.untreeify(map);
